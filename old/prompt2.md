@@ -1,15 +1,21 @@
 Help me create an on-demand reference guide for a specific task type in my project. This guide will be stored in a reference/ folder and loaded only when working on this specific type of task.
 What I Need
 
-I want to create a reference guide for: Creating a tool to controll the dji RoboMaster S1 robot. We start with the basic installation and proceed with a demo.
+I want to create a reference guide for: controlling the robomaster S1. The S1 is already rooted and in SDK mode
+
 Research best practices and conventions from this resource:  
 
 
 
 Instructions for Creating the Reference Guide:
 
-https://www.dji.com/pr/robomaster-s1/programming-guide
+https://github.com/brunoga/robomaster (Go) 
 
+https://github.com/nanmu42/robomasterpy (Python)
+
+https://github.com/dji-sdk/RoboMaster-SDK
+
+https://robomaster-dev.readthedocs.io/zh_CN/latest/ (In Chinese)
 
 
 Create a concise, actionable reference guide following this structure:
