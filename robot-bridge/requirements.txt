@@ -1,0 +1,13 @@
+# Runtime requirements for robomastr-robot-bridge
+# Install in a Python 3.8/3.9 environment only
+
+fastapi>=0.115.0
+uvicorn[standard]>=0.32.0
+pydantic>=2.9.0
+pydantic-settings>=2.5.0
+numpy>=1.24.0
+opencv-python>=4.8.0
+
+# Install robomaster from local SDK copy if PyPI install fails on Python 3.8+:
+#   pip install -e "../RoboMaster-SDK"
+robomaster>=0.1.0
