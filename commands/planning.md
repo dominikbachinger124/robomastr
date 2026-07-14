@@ -1,6 +1,6 @@
 ---
 description: Research and create implementation plan for a feature
-argument-hint: [feature-description]
+argument-hint: We want to implement a webinterface to control the S1 and see it cameraoutput. the controller should also be a gamepad.mammouth
 ---
 
 # Planning: Feature Implementation Plan
