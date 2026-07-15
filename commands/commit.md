@@ -1,139 +1,54 @@
 ---
-description: Create git commit with conventional message format
-argument-hint: [file1] [file2] ... (optional - commits all changes if not specified)
-allowed-tools: Bash(git status:*), Bash(git diff:*), Bash(git add:*), Bash(git commit:*)
+description: Create a conventional commit for the dashboard end-to-end milestone
+argument-hint: (optional message)
+allowed-tools: Bash(git status:*), Bash(git diff:*), Bash(git add:*), Bash(git commit:*), Bash(git show:*)
 ---
 
-# Commit: Create Git Commit
+# Commit: Dashboard End-to-End Milestone
 
-## Files to Commit
+This is a significant milestone: the web dashboard now works end-to-end with the real DJI RoboMaster S1, including gamepad steering, live telemetry, diagnostics, and connection control.
 
-Files specified: $ARGUMENTS
+## What changed since the last commit
 
-(If no files specified, will commit all changes)
+- `robot-bridge/`: Python 3.8 compatible bridge with HTTP API, SDK wrapper, video stream, LED test, and tests.
+- `backend/`: FastAPI app with safety layer, REST proxy, WebSocket control/telemetry, recording stubs, and tests.
+- `frontend/`: React 19 dashboard with connection panel, diagnostics, robot status, gamepad input, video feed, and immediate state wiring across REST actions.
+- `info.md`: Updated project snapshot documenting fixes and verified end-to-end status.
 
-## Commit Process
+## Suggested commit message
 
-### 1. Review Current State
+```text
+feat(dashboard): wire frontend state and verify end-to-end robot control
 
-Check git status:
-!`git status`
+- Share RobotState across Dashboard, ConnectionPanel and DiagnosticsPanel
+  for instant UI feedback after connect/disconnect/diagnostics.
+- Add getRobotStatus refresh after LED test to reflect real telemetry.
+- Fix WebSocket RobotState validation for battery_percent=-1 bridge values.
+- Verify end-to-end: connect, telemetry, diagnostics, gamepad steering.
 
-Review changes to commit:
-!`git diff HEAD`
-
-If staging specific files, review their changes:
-!`git diff HEAD -- $ARGUMENTS`
-
-### 2. Analyze Changes
-
-Examine the diff and determine:
-
-**Type of change:**
-- `feat`: New feature
-- `fix`: Bug fix
-- `refactor`: Code refactoring
-- `docs`: Documentation only
-- `test`: Adding or updating tests
-- `chore`: Maintenance (deps, config, etc.)
-- `perf`: Performance improvement
-- `style`: Code style/formatting
-
-**Scope (if applicable):**
-- Component or area affected (api, auth, ui, etc.)
-
-**Description:**
-- Brief summary of what changed (50 chars or less)
-- Use imperative mood ("add" not "added")
-
-**Body (if needed):**
-- More detailed explanation
-- Why the change was made
-- Any important context
-
-**Breaking changes (if any):**
-- Note any breaking changes
-
-### 3. Stage Files
-
-If specific files provided:
-```bash
-git add $ARGUMENTS
+Refs: info.md milestone 13
 ```
 
-If no files specified (commit all changes):
-```bash
-git add .
-```
+## Steps
 
-### 4. Create Commit
+1. Review changes:
+   !`git status`
+   !`git diff HEAD`
 
-Using conventional commit format:
+2. Stage all relevant files:
+   ```bash
+   git add info.md commands/commit.md frontend/src/pages/Dashboard.tsx frontend/src/components/ConnectionPanel.tsx frontend/src/components/DiagnosticsPanel.tsx
+   ```
 
-```
-type(scope): description
+3. Create the commit:
+   ```bash
+   git commit -m "feat(dashboard): wire frontend state and verify end-to-end robot control" -m "- Share RobotState across Dashboard, ConnectionPanel and DiagnosticsPanel" -m "  for instant UI feedback after connect/disconnect/diagnostics." -m "- Add getRobotStatus refresh after LED test to reflect real telemetry." -m "- Fix WebSocket RobotState validation for battery_percent=-1 bridge values." -m "- Verify end-to-end: connect, telemetry, diagnostics, gamepad steering."
+   ```
 
-[optional body]
-
-[optional footer]
-```
-
-Example:
-```
-feat(auth): add user authentication system
-
-Implements JWT-based authentication with:
-- Login endpoint with credentials validation
-- Token generation and verification
-- Protected route middleware
-
-Tests added for all auth flows
-```
-
-Execute the commit:
-```bash
-git commit -m "[commit message]"
-```
-
-### 5. Confirm Success
-
-Verify commit created:
-!`git log -1 --oneline`
-
-Show commit details:
-!`git show --stat`
-
-## Output Report
-
-### Commit Created
-
-**Commit Hash**: [hash]
-
-**Commit Message**:
-```
-[full commit message]
-```
-
-**Files Committed**:
-- [list of files with change stats]
-
-**Summary**:
-- X files changed
-- Y insertions(+)
-- Z deletions(-)
-
-### Next Steps
-
-Commit successfully created! Next actions:
-- Push to remote: `git push`
-- Or continue development with next feature
+4. Confirm:
+   !`git log -1 --stat`
 
 ## Notes
 
-- If there are no changes to commit, report this clearly
-- If commit fails (e.g., pre-commit hooks), report the error
-- Follow the project's commit message conventions
-- Include co-author if appropriate:
-  ```
-  Co-authored-by: Claude <noreply@anthropic.com>
-  ```
+- Do not include build artifacts or `node_modules/`.
+- If there are unrelated changes in the working tree, stage only the files relevant to this milestone.
