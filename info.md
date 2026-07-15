@@ -260,6 +260,12 @@ pnpm lint
   11. **Fixed:** WebSocket broadcast no longer crashes when the bridge returns `battery_percent=-1` (the `-1` sentinel is normalized to `0` before creating `RobotState`).
   12. **Wired:** Dashboard robot state is now shared across REST actions. `ConnectionPanel` and `DiagnosticsPanel` report the resulting `RobotState` to `Dashboard` via `onRobotStateUpdate`, so the `RobotStatus` badge updates immediately after connect, disconnect, connection tests, and LED tests. The per-second WebSocket broadcast continues to refresh telemetry in the background.
   13. **Verified end-to-end:** The web dashboard is operational with the real robot. Connect/disconnect, telemetry, diagnostics (Test Connection + Test LEDs), and gamepad steering all work.
+  14. **Video feed fix:** The MJPEG stream works stand-alone at `http://localhost:8005/video/stream` but failed inside the dashboard (no picture, then system freeze). The fix embeds that exact endpoint in an `<iframe>` in `frontend/src/components/VideoFeed.tsx` so the browser renders the stream independently. This avoids CORS, backend proxy buffering, and browser-specific `<img>` MJPEG decoder issues. Supporting changes:
+      - Lowered default capture settings in `robot-bridge/app/config.py` to `360p`, `15 FPS`, JPEG quality `65`.
+      - Added CORS middleware to `robot-bridge/app/main.py` for direct bridge access.
+      - `frontend/src/lib/api.ts` keeps both `getBridgeVideoStreamUrl()` and `getBackendVideoStreamUrl()` helpers.
+      - Backend proxy endpoint `/api/video/stream` remains available as a fallback.
+  15. **Pending (low priority):** Allow the user to stop the active MJPEG stream inside the dashboard without pausing the whole `VideoFeed` card. Tracked in todo list.
 
 ---
 

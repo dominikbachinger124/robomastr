@@ -20,6 +20,9 @@ wheels/
 .installed.cfg
 *.egg
 
+# Frontend source files live in frontend/src/lib; do not ignore them.
+!frontend/src/lib/
+
 # Virtual environments
 venv/
 ENV/

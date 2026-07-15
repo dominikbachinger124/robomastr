@@ -2,11 +2,15 @@
 
 from __future__ import annotations
 
+import asyncio
+import functools
+import sys
 from contextlib import asynccontextmanager
-from typing import Any, AsyncGenerator, Dict
+from typing import Any, AsyncGenerator, Callable, Dict, TypeVar
 
 from fastapi import FastAPI, HTTPException
 from fastapi import status as http_status
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field, field_validator
 
@@ -16,6 +20,17 @@ from app.robot import robot_controller
 from app.video import VideoStreamer
 
 logger = get_logger(__name__)
+
+_T = TypeVar("_T")
+
+if sys.version_info >= (3, 9):
+    _to_thread = asyncio.to_thread
+else:
+
+    async def _to_thread(func: Callable[..., _T], *args: Any, **kwargs: Any) -> _T:
+        """Backport of asyncio.to_thread for Python 3.8."""
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(None, functools.partial(func, *args, **kwargs))
 
 
 class ConnectRequest(BaseModel):
@@ -75,6 +90,16 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# Allow the frontend dev server and production build to access the bridge
+# directly for the MJPEG video stream. Credentials are not used.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[settings.frontend_origin] if settings.frontend_origin else ["*"],
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["*"],
+)
+
 
 @app.get("/health", tags=["health"])
 async def health() -> Dict[str, str]:
@@ -92,7 +117,7 @@ async def ready() -> Dict[str, Any]:
 async def connect(request: ConnectRequest) -> Dict[str, Any]:
     """Connect to the robot."""
     try:
-        return robot_controller.connect(request.conn_type)
+        return await _to_thread(robot_controller.connect, request.conn_type)
     except RuntimeError as exc:
         raise HTTPException(
             status_code=http_status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -108,14 +133,14 @@ async def connect(request: ConnectRequest) -> Dict[str, Any]:
 @app.post("/disconnect", tags=["robot"])
 async def disconnect() -> Dict[str, Any]:
     """Disconnect from the robot."""
-    return robot_controller.disconnect()
+    return await _to_thread(robot_controller.disconnect)
 
 
 @app.post("/chassis/move", tags=["robot"])
 async def chassis_move(request: ChassisMoveRequest) -> Dict[str, str]:
     """Move the chassis with clamped speeds."""
     try:
-        robot_controller.move_chassis(request.x, request.y, request.z)
+        await _to_thread(robot_controller.move_chassis, request.x, request.y, request.z)
     except RuntimeError as exc:
         raise _not_connected(str(exc)) from exc
     return {"status": "ok"}
@@ -125,7 +150,7 @@ async def chassis_move(request: ChassisMoveRequest) -> Dict[str, str]:
 async def chassis_stop() -> Dict[str, str]:
     """Stop the chassis."""
     try:
-        robot_controller.stop_chassis()
+        await _to_thread(robot_controller.stop_chassis)
     except RuntimeError as exc:
         raise _not_connected(str(exc)) from exc
     return {"status": "ok"}
@@ -133,9 +158,9 @@ async def chassis_stop() -> Dict[str, str]:
 
 @app.post("/gimbal/move", tags=["robot"])
 async def gimbal_move(request: GimbalMoveRequest) -> Dict[str, str]:
-    """Move the gimbal with clamped speeds."""
+    """Move the gimbal."""
     try:
-        robot_controller.move_gimbal(request.pitch_speed, request.yaw_speed)
+        await _to_thread(robot_controller.move_gimbal, request.pitch_speed, request.yaw_speed)
     except RuntimeError as exc:
         raise _not_connected(str(exc)) from exc
     return {"status": "ok"}
@@ -145,7 +170,7 @@ async def gimbal_move(request: GimbalMoveRequest) -> Dict[str, str]:
 async def gimbal_stop() -> Dict[str, str]:
     """Stop the gimbal."""
     try:
-        robot_controller.stop_gimbal()
+        await _to_thread(robot_controller.stop_gimbal)
     except RuntimeError as exc:
         raise _not_connected(str(exc)) from exc
     return {"status": "ok"}
@@ -155,7 +180,21 @@ async def gimbal_stop() -> Dict[str, str]:
 async def blaster_fire() -> Dict[str, str]:
     """Fire the blaster once."""
     try:
-        robot_controller.fire_blaster()
+        await _to_thread(robot_controller.fire_blaster)
+    except RuntimeError as exc:
+        raise _not_connected(str(exc)) from exc
+    return {"status": "ok"}
+
+
+@app.post("/led/test", tags=["robot"])
+async def led_test() -> Dict[str, str]:
+    """Run the diagnostic LED sequence on gimbal and chassis.
+
+    This endpoint blocks a worker thread for approximately 6.5 seconds
+    while it cycles the LEDs through red, green, blue, and off states.
+    """
+    try:
+        await _to_thread(robot_controller.run_led_test)
     except RuntimeError as exc:
         raise _not_connected(str(exc)) from exc
     return {"status": "ok"}
@@ -164,7 +203,7 @@ async def blaster_fire() -> Dict[str, str]:
 @app.get("/status", tags=["robot"])
 async def robot_status() -> Dict[str, Any]:
     """Return robot status."""
-    return robot_controller.get_status()
+    return await _to_thread(robot_controller.get_status)
 
 
 @app.get("/video/stream", tags=["video"])
@@ -172,7 +211,7 @@ async def video_stream() -> StreamingResponse:
     """Stream live MJPEG video from the robot camera."""
     if not video_streamer.is_running:
         try:
-            video_streamer.start()
+            await _to_thread(video_streamer.start)
         except RuntimeError as exc:
             raise _not_connected(str(exc)) from exc
         except Exception as exc:  # pragma: no cover - camera init failure

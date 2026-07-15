@@ -18,8 +18,9 @@ class Settings(BaseSettings):
 
     app_name: str = "RoboMastr Robot Bridge"
     host: str = "0.0.0.0"
-    port: int = 8001
+    port: int = 8005
     default_conn_type: str = "ap"
+    frontend_origin: str = "http://localhost:5173"
 
     # Safety limits (defense in depth, backend enforces them as well)
     max_linear_speed_mps: float = 0.5
@@ -27,9 +28,11 @@ class Settings(BaseSettings):
     max_gimbal_speed_dps: float = 90.0
 
     # Video capture settings
-    video_resolution: str = "720p"
-    video_fps: int = 30
-    video_quality: int = 85
+    # Lower defaults for a responsive web dashboard. Raise values only when
+    # network and host CPU can sustain the higher bitrate without lag.
+    video_resolution: str = "360p"
+    video_fps: int = 15
+    video_quality: int = 65
 
     # Observability
     log_level: str = "INFO"
